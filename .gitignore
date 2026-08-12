@@ -10,4 +10,4 @@ wheels/
 .venv
 __pycache__
 
-.sql
+*.sql
