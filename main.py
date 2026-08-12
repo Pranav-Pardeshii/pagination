@@ -21,6 +21,7 @@ def get_session():
 
 session_dp = Annotated[Session, Depends(get_session)]
 
+# Handles the startup and shutdown of web application 
 @asynccontextmanager
 async def lifespan():
     create_db_and_tables()
