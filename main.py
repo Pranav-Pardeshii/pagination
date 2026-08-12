@@ -1,6 +1,32 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from typing import Annotated
 
-app = FastAPI(root_path="/api/v1")
+from fastapi import Depends, FastAPI
+from sqlmodel import SQLModel, Session, create_engine
+
+
+# Initialize database
+sql_lite_filename = "database.db"
+sql_lite_url = f"sql_lite:///{sql_lite_filename}"
+
+connect_args = {"check_same_thread":False}
+engine = create_engine(sql_lite_url, connect_args=connect_args)
+
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+session_dp = Annotated[Session, Depends(get_session)]
+
+@asynccontextmanager
+async def lifespan():
+    create_db_and_tables()
+    yield
+
+app = FastAPI(root_path="/api/v1", lifespan=lifespan)
 
 @app.get("/")
 async def root():
