@@ -7,7 +7,7 @@ from sqlmodel import SQLModel, Session, create_engine
 
 # Initialize database
 sql_lite_filename = "database.db"
-sql_lite_url = f"sql_lite:///{sql_lite_filename}"
+sql_lite_url = f"sqlite:///{sql_lite_filename}"
 
 connect_args = {"check_same_thread":False}
 engine = create_engine(sql_lite_url, connect_args=connect_args)
@@ -23,7 +23,7 @@ session_dp = Annotated[Session, Depends(get_session)]
 
 # Handles the startup and shutdown of web application 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
