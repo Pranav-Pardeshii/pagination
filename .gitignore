@@ -11,3 +11,5 @@ wheels/
 __pycache__
 
 *.sql
+
+*.db
