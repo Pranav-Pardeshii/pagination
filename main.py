@@ -91,3 +91,10 @@ async def update_campaign(id: int, campaign: CreateCampaign, session: session_dp
     session.refresh(data)
     return {"data":data}
 
+@app.delete("campaign/{id}", status_code=204)
+async def delete_campaign(id: int, session: session_dp):
+    data = session.get(Campaign, id)
+    if not data:
+        raise HTTPException(status_code=404)
+    session.delete(data)
+    session.commit()
