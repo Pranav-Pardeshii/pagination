@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
@@ -58,3 +58,9 @@ async def read_campaigns(session: session_dp):
     data = session.exec(select(Campaign)).all()
     return {"campaigns":data}
 
+@app.get("/campaigns/{id}")
+async def read_campaigns(id: int, session: session_dp):
+    data = session.get(Campaign, id)
+    if not data:
+        raise HTTPException(status_code=404)
+    return {"campaign":data}
