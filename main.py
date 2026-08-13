@@ -12,6 +12,10 @@ class Campaign(SQLModel, table=True):
     due_date: datetime | None = Field(default=None, index=True)
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True,  index=True)
 
+class CreateCampaign(SQLModel):
+    name: str
+    due_date: datetime | None
+
 
 
 # Initialize database
@@ -66,3 +70,11 @@ async def read_campaigns(id: int, session: session_dp):
     if not data:
         raise HTTPException(status_code=404)
     return {"data":data}
+
+@app.post("/campaigns/", status_code=201, response_model=Response[Campaign])
+async def create_campaign(campaign: CreateCampaign, session: session_dp):
+    db_campaign = Campaign.model_validate(campaign)
+    session.add(db_campaign)
+    session.commit()
+    session.refresh(db_campaign)
+    return {"data": campaign}
