@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Generic, TypeVar
 
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
@@ -12,8 +12,6 @@ class Campaign(SQLModel, table=True):
     due_date: datetime | None = Field(default=None, index=True)
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True,  index=True)
 
-class CampaignsResponse(BaseModel):
-    name: list[Campaign]
 
 
 # Initialize database
@@ -49,18 +47,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(root_path="/api/v1", lifespan=lifespan)
 
+T = TypeVar("T")
+class Response(BaseModel, Generic[T]):
+    data: T
+
 @app.get("/")
 async def root():
     return {"message":"connection successfull!"}
 
-@app.get("/campaigns", response_model=CampaignsResponse)
+@app.get("/campaigns", response_model=Response[list[Campaign]])
 async def read_campaigns(session: session_dp):
     data = session.exec(select(Campaign)).all()
-    return {"campaigns":data}
+    return {"data":data}
 
-@app.get("/campaigns/{id}")
+@app.get("/campaigns/{id}", response_model=Response[Campaign])
 async def read_campaigns(id: int, session: session_dp):
     data = session.get(Campaign, id)
     if not data:
         raise HTTPException(status_code=404)
-    return {"campaign":data}
+    return {"data":data}
