@@ -78,3 +78,16 @@ async def create_campaign(campaign: CreateCampaign, session: session_dp):
     session.commit()
     session.refresh(db_campaign)
     return {"data": campaign}
+
+@app.put("/campaign/{id}", response_model=Response[Campaign])
+async def update_campaign(id: int, campaign: CreateCampaign, session: session_dp):
+    data = session.get(Campaign, id)
+    if not data:
+        raise HTTPException(status_code=404)
+    data.name = campaign.name
+    data.due_date = campaign.due_date
+    session.add(data)
+    session.commit()
+    session.refresh(data)
+    return {"data":data}
+
