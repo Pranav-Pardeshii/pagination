@@ -63,7 +63,6 @@ class PaginatedResponse(SQLModel, Generic[T]):
     data: T
     next: Optional[str]
     prev: Optional[str]
-    count: int
 
 @app.get("/campaigns/", response_model=PaginatedResponse[list[Campaign]])
 async def read_campaigns(request: Request, session: session_dp, page: int = Query(1, ge=1), page_size: int = Query(10, ge=10, le=30)):
@@ -72,22 +71,15 @@ async def read_campaigns(request: Request, session: session_dp, page: int = Quer
     data = session.exec(select(Campaign).order_by(Campaign.campaign_id).offset(offset).limit(limit)).all()
     base_url = str(request.url).split('?')[0]
 
-    total = session.exec(select(func.count()).select_from(Campaign)).one()
+  
+    next_url = f"{base_url}?page={page+1}&page_size={limit}"
 
-    if offset + limit < total:
-        next_url = f"{base_url}?page={page+1}&page_size={limit}"
-    else:
-        next_url = None
+    prev_url = f"{base_url}?page={page-1}&page_size={limit}"
 
-    if page > 1:
-        prev_url = f"{base_url}?page={page-1}&page_size={limit}"
-    else:
-        prev_url = None
 
     return {
         "next":next_url,
         "prev":prev_url,
-        "count":total,
         "data":data
         }
 
