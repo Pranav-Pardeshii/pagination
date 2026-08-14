@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic, Optional, TypeVar
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from pydantic import BaseModel
-from sqlmodel import Field, SQLModel, Session, create_engine, select
+from sqlmodel import Field, SQLModel, Session, create_engine, func, select
 
 class Campaign(SQLModel, table=True):
     campaign_id: int | None = Field(default=None, primary_key=True)
@@ -59,12 +59,37 @@ class Response(BaseModel, Generic[T]):
 async def root():
     return {"message":"connection successfull!"}
 
-@app.get("/campaigns/", response_model=Response[list[Campaign]])
-async def read_campaigns(session: session_dp, page: int = Query(1, ge=1), page_size: int = Query(10, ge=10, le=30)):
+class PaginatedResponse(SQLModel, Generic[T]):
+    data: T
+    next: Optional[str]
+    prev: Optional[str]
+    count: int
+
+@app.get("/campaigns/", response_model=PaginatedResponse[list[Campaign]])
+async def read_campaigns(request: Request, session: session_dp, page: int = Query(1, ge=1), page_size: int = Query(10, ge=10, le=30)):
     limit = page_size
     offset= (page -1) * limit
     data = session.exec(select(Campaign).order_by(Campaign.campaign_id).offset(offset).limit(limit)).all()
-    return {"data":data}
+    base_url = str(request.url).split('?')[0]
+
+    total = session.exec(select(func.count()).select_from(Campaign)).one()
+
+    if offset + limit < total:
+        next_url = f"{base_url}?page={page+1}&page_size={limit}"
+    else:
+        next_url = None
+
+    if page > 1:
+        prev_url = f"{base_url}?page={page-1}&page_size={limit}"
+    else:
+        prev_url = None
+
+    return {
+        "next":next_url,
+        "prev":prev_url,
+        "count":total,
+        "data":data
+        }
 
 @app.get("/campaigns/{id}", response_model=Response[Campaign])
 async def read_campaigns(id: int, session: session_dp):
