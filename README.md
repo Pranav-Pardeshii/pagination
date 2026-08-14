@@ -115,7 +115,3 @@ Base path: `/api/v1`
 ## Contributing
 
 This repository is a personal learning artifact. If you'd like to suggest improvements (examples, better pagination strategies, or tests), open an issue or a pull request.
-
----
-
-If you'd like, I can also add a short example curl snippet showing raw responses, add tests, or change pagination to cursor-based. Tell me which and I'll update the README.
