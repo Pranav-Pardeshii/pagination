@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Annotated, Generic, TypeVar
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel import Field, SQLModel, Session, create_engine, select
 
@@ -59,9 +59,11 @@ class Response(BaseModel, Generic[T]):
 async def root():
     return {"message":"connection successfull!"}
 
-@app.get("/campaigns", response_model=Response[list[Campaign]])
-async def read_campaigns(session: session_dp):
-    data = session.exec(select(Campaign)).all()
+@app.get("/campaigns/", response_model=Response[list[Campaign]])
+async def read_campaigns(session: session_dp, page: int = Query(1, ge=1), page_size: int = Query(10, ge=10, le=30)):
+    limit = page_size
+    offset= (page -1) * limit
+    data = session.exec(select(Campaign).order_by(Campaign.campaign_id).offset(offset).limit(limit)).all()
     return {"data":data}
 
 @app.get("/campaigns/{id}", response_model=Response[Campaign])
